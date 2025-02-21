@@ -39,15 +39,16 @@
         <h1>Simple Calculator</h1>
         <br>
         
+        
         <form action="calculate" method="post">
             <div class="form-group">
                 <label for="num1">Number 1: </label>
-                <input type="number" step="any" id="num1" name="num1" value="${num1}" required>
+                <input type="number" id="num1" name="num1" value="${num1}" required>
             </div>
             
             <div class="form-group">
                 <label for="num2">Number 2: </label>
-                <input type="number" step="any" id="num2" name="num2" value="${num2}" required>
+                <input type="number" id="num2" name="num2" value="${num2}" required>
             </div>
             
             <div class="form-group">
@@ -62,6 +63,7 @@
             </div>
         </form>
         
+        <!-- Showing result from model attribute "result" -->
         <% if (request.getAttribute("result") != null) { %>
           <div class="result">Result: ${result}</div>
         <% } %>

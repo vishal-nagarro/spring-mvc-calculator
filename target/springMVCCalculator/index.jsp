@@ -1,4 +1,5 @@
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<% response.sendRedirect("calculator"); %>
 
+<!-- Redirect to the calculator.jsp page -->
+<% response.sendRedirect("calculator"); %>
