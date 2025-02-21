@@ -10,6 +10,9 @@ pool:
   name: 'Default'
   vmImage: ubuntu-latest
 
+variables:
+  JAVA_HOME_11_X64: '/usr/lib/jvm/java-11-openjdk'
+
 steps:
 - task: Maven@3
   inputs:
