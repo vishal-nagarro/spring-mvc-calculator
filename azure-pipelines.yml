@@ -23,6 +23,13 @@ steps:
     jdkVersionOption: '1.11'
     jdkArchitectureOption: 'x64'
     publishJUnitResults: true
+    testResultsFiles: '**/TEST-*.xml'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/TEST-*.xml'
+    testRunTitle: 'JUnit Test Results'
 
 - task: CopyFiles@2
   inputs:
