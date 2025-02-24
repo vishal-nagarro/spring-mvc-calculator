@@ -14,6 +14,7 @@ public class CalculatorController {
     @Autowired
     private CalculatorService calcService;
 
+    // This annotation maps to the calculator.jsp view defined
     @RequestMapping("/calculator")
     public String showCalculator() {
         return "calculator";
