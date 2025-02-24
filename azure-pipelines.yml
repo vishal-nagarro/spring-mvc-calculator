@@ -8,6 +8,14 @@ trigger:
     include:
       - dev
 
+schedules:
+- cron: "30 11 * * Wed,Fri"   # Runs at 5:00 PM IST (11:30 AM UTC)
+  displayName: "Scheduled Build - Wednesday and Friday at 5 PM IST"
+  branches:
+    include:
+      - dev
+  always: true  # Ensures the pipeline runs even if there are no code changes
+
 pool:
   name: 'Default'
   vmImage: ubuntu-latest
