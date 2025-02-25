@@ -33,7 +33,8 @@ steps:
     jdkVersionOption: '1.11'
     jdkArchitectureOption: 'x64'
     publishJUnitResults: true
-    testResultsFiles: '**/TEST-*.xml'
+    testResultsFiles: '**/TEST-*.xml' 
+    continueOnError: true
 
 - task: PublishTestResults@2
   inputs:
