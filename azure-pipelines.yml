@@ -49,7 +49,7 @@ steps:
     script: |
       echo "Starting Bug Creation"
 
-      export PAT_TOKEN = "$(PAT-TOKEN)"
+      export PAT_TOKEN="$(PAT-TOKEN)"
       PROJECT_URL="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/wit/workitems/4?api-version=6.0"
 
       JSON_DATA='[
