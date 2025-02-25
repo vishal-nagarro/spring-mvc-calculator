@@ -26,3 +26,5 @@ public class CalculatorService {
         return num1 / num2;
     }
 }
+
+Test code to generate a bug (work-item) on build failure when the pipeline runs
