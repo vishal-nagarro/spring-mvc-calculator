@@ -41,14 +41,15 @@ steps:
 
 
 # Bug Creation Task - Runs only if the Maven build fails
-- task: PowerShell@2
+- task: Bash@3
   condition: failed()
   inputs:
     targetType: 'inline'
     script: |
-      $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/wit/workitems/$Bug?api-version=6.0"
-      $body = @"
-      [
+      export PAT_TOKEN="$(PAT_TOKEN)"
+      PROJECT_URL="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/wit/workitems/`$Bug?api-version=6.0"
+
+      JSON_DATA='[
         {
           "op": "add",
           "path": "/fields/System.Title",
@@ -62,19 +63,18 @@ steps:
         {
           "op": "add",
           "path": "/fields/System.AssignedTo",
-          "value": $(assignee-email)  # assignee's email
+          "value": $(assignee-email) 
         }
-      ]
-      "@
+      ]'
+
+      echo "Creating bug in Azure DevOps..."
       
-      $PAT = "$(PAT_TOKEN)"  # Personal Access Token for verification
-      $headers = @{
-        Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$PAT"))
-        "Content-Type" = "application/json-patch+json"
-      }
-      
-      Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body
-  displayName: 'Create Bug in Azure DevOps'
+      curl -X POST -H "Content-Type: application/json-patch+json" \
+          -H "Authorization: Basic $(echo -n :$PAT_TOKEN | base64)" \
+          --data "$JSON_DATA" "$PROJECT_URL"
+
+    displayName: 'Create Bug in Azure DevOps'
+    condition: failed()
 
 - task: PublishTestResults@2
   inputs:
