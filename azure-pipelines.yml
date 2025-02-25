@@ -76,6 +76,10 @@ steps:
           -H "Content-Type: application/json-patch+json" \
           -H "Authorization: Basic $(echo -n :$PAT_TOKEN | base64)" \
           --data "$JSON_DATA" --http1.1 "$PROJECT_URL")
+      
+      echo "API Response Code: $RESPONSE"
+      echo "API Response Body:"
+      cat response.json
 
   displayName: 'Create Bug in Azure DevOps'
 
