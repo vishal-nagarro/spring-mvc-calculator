@@ -25,9 +25,6 @@ variables:
   JAVA_HOME_11_X64: '/usr/lib/jvm/java-11-openjdk'
 
 steps:
-- script: exit 1  # Simulating a build failure
-  displayName: 'Fail the Build'
-
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
@@ -40,6 +37,9 @@ steps:
     testResultsFiles: '**/TEST-*.xml' 
     continueOnError: true
 
+
+- script: exit 1  # Simulating a build failure
+  displayName: 'Fail the Build'
 
 # Bug Creation Task - Runs only if the Maven build fails
 - task: Bash@3
@@ -74,8 +74,7 @@ steps:
           -H "Authorization: Basic $(echo -n :$PAT_TOKEN | base64)" \
           --data "$JSON_DATA" "$PROJECT_URL"
 
-    displayName: 'Create Bug in Azure DevOps'
-    condition: failed()
+  displayName: 'Create Bug in Azure DevOps'
 
 - task: PublishTestResults@2
   inputs:
