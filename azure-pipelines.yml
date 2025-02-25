@@ -50,7 +50,7 @@ steps:
       echo "Starting Bug Creation"
 
       export PAT_TOKEN="$(PAT-TOKEN)"
-      PROJECT_URL="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/wit/workitems/4?api-version=6.0"
+      PROJECT_URL="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/wit/workitems/$Bug?api-version=6.0"
 
       JSON_DATA='[
         {
@@ -72,9 +72,10 @@ steps:
 
       echo "Creating bug in Azure DevOps..."
       
-      curl -X POST -H "Content-Type: application/json-patch+json" \
+      RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          -H "Content-Type: application/json-patch+json" \
           -H "Authorization: Basic $(echo -n :$PAT_TOKEN | base64)" \
-          --data "$JSON_DATA" "$PROJECT_URL"
+          --data "$JSON_DATA" --http1.1 "$PROJECT_URL")
 
   displayName: 'Create Bug in Azure DevOps'
 
