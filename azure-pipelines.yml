@@ -43,6 +43,7 @@ steps:
     custompaths: false
     customrequestor: true
     customrequestorid: 'vishal.verma03@nagarro.com'
+  condition: failed()
 
 # # Bug Creation Task - Runs only if the Maven build fails
 # - task: Bash@3
