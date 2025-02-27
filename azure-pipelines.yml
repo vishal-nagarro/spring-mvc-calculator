@@ -38,9 +38,6 @@ steps:
     continueOnError: true
 
 
-- script: exit 1  # Simulating a build failure
-  displayName: 'Fail the Build'
-
 # Bug Creation Task - Runs only if the Maven build fails
 - task: Bash@3
   condition: failed()
