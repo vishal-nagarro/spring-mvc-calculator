@@ -37,48 +37,54 @@ steps:
     testResultsFiles: '**/TEST-*.xml' 
     continueOnError: true
 
-
-# Bug Creation Task - Runs only if the Maven build fails
-- task: Bash@3
-  condition: failed()
+- task: CreateBug@2
   inputs:
-    targetType: 'inline'
-    script: |
-      echo "Starting Bug Creation"
+    isyamlpipeline: true
+    custompaths: false
+    customrequestor: true
+    customrequestorid: 'vishal.verma03@nagarro.com'
 
-      export PAT-TOKEN="$(PAT-TOKEN)"
-      PROJECT_URL="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/wit/workitems/$Bug?api-version=6.0"
+# # Bug Creation Task - Runs only if the Maven build fails
+# - task: Bash@3
+#   condition: failed()
+#   inputs:
+#     targetType: 'inline'
+#     script: |
+#       echo "Starting Bug Creation"
 
-      JSON_DATA='[
-        {
-          "op": "add",
-          "path": "/fields/System.Title",
-          "value": "Build Failure: $(Build.DefinitionName) - $(Build.BuildNumber)"
-        },
-        {
-          "op": "add",
-          "path": "/fields/System.Description",
-          "value": "The build $(Build.BuildNumber) failed in branch $(Build.SourceBranch). Check logs for details."
-        },
-        {
-          "op": "add",
-          "path": "/fields/System.AssignedTo",
-          "value": $(assignee-email) 
-        }
-      ]'
+#       export PAT-TOKEN="$(PAT-TOKEN)"
+#       PROJECT_URL="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/wit/workitems/$Bug?api-version=6.0"
 
-      echo "Creating bug in Azure DevOps..."
+#       JSON_DATA='[
+#         {
+#           "op": "add",
+#           "path": "/fields/System.Title",
+#           "value": "Build Failure: $(Build.DefinitionName) - $(Build.BuildNumber)"
+#         },
+#         {
+#           "op": "add",
+#           "path": "/fields/System.Description",
+#           "value": "The build $(Build.BuildNumber) failed in branch $(Build.SourceBranch). Check logs for details."
+#         },
+#         {
+#           "op": "add",
+#           "path": "/fields/System.AssignedTo",
+#           "value": $(assignee-email) 
+#         }
+#       ]'
+
+#       echo "Creating bug in Azure DevOps..."
       
-      RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
-        -H "Content-Type: application/json-patch+json" \
-        -H "Authorization: Bearer $PAT-TOKEN" \
-        --data "$JSON_DATA" --http1.1 "$PROJECT_URL")
+#       RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+#         -H "Content-Type: application/json-patch+json" \
+#         -H "Authorization: Bearer $PAT-TOKEN" \
+#         --data "$JSON_DATA" --http1.1 "$PROJECT_URL")
       
-      echo "API Response Code: $RESPONSE"
-      echo "API Response Body:"
-      cat response.json
+#       echo "API Response Code: $RESPONSE"
+#       echo "API Response Body:"
+#       cat response.json
 
-  displayName: 'Create Bug in Azure DevOps'
+#   displayName: 'Create Bug in Azure DevOps'
 
 - task: PublishTestResults@2
   inputs:
