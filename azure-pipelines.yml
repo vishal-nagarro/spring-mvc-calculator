@@ -37,13 +37,32 @@ steps:
     testResultsFiles: '**/TEST-*.xml' 
     continueOnError: true
 
-- task: CreateBug@2
-  inputs:
-    isyamlpipeline: true
-    custompaths: false
-    customrequestor: true
-    customrequestorid: 'vishal.verma03@nagarro.com'
-  condition: failed()
+
+# This job creates a work item and only runs if the previous job failed
+# jobs:
+# - job: ErrorHandler
+#   condition: failed()
+#   pool:
+#     vmImage: 'ubuntu-latest'
+#   steps:
+#   - bash: |
+#       az boards work-item create \
+#         --title "Build $(Build.BuildNumber) failed" \
+#         --type bug \
+#         --org $(System.TeamFoundationCollectionUri) \
+#         --project $(System.TeamProject)
+#     env:
+#       AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+#     displayName: 'Create work item on failure'
+
+
+# - task: CreateBug@2
+#   inputs:
+#     isyamlpipeline: true
+#     custompaths: false
+#     customrequestor: true
+#     customrequestorid: 'vishal.verma03@nagarro.com'
+#   condition: failed()
 
 # # Bug Creation Task - Runs only if the Maven build fails
 # - task: Bash@3
