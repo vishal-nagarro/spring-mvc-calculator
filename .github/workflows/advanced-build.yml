@@ -80,7 +80,7 @@ jobs:
         password: ${{ secrets.SMTP_PASSWORD }}
         subject: "Build Failed: ${{ github.repository }}"
         body: "The latest build of ${{ github.repository }} has failed. Please check the logs in GitHub Actions."
-        to: "vishal.verma03@nagarro.com"
+        to: ${{ secrets.NOTIFICATION_EMAIL }}
         from: "GitHub Actions Bot"
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     # - name: Update dependency graph
