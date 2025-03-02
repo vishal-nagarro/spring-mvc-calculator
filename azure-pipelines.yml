@@ -43,7 +43,8 @@ steps:
     workItemType: 'Bug'
     title: 'Bug created on build fail'
     associate: true
-    assignedTo: 'vishal.verma03@nagarro.com'
+    associationType: build
+    assignedTo: '$(ASSIGNEE_EMAIL)'
     authType: 'pat'
     authToken: '$(PAT_TOKEN)'
 
