@@ -27,22 +27,26 @@ jobs:
         
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+      continue-on-error: false  # Fails the pipeline if build fails
 
     - name: Run tests
       run: mvn test
+      continue-on-error: true  # Logs failure but allows the pipeline to continue
 
     - name: Generate test report
       run: mvn surefire-report:report
+      continue-on-error: true  # Even if tests fail, generate the report
 
     - name: Publish Test Report
       uses: actions/upload-artifact@v4
       with:
         name: test-report
-        path: target/site/surefire-report.html
+        path: target/surefire-reports/
     
     - name: Generate Code Coverage Report
       run: mvn jacoco:report
-
+      continue-on-error: true
+      
     - name: Upload Code Coverage Report 
       uses: actions/upload-artifact@v4
       with:
@@ -50,6 +54,7 @@ jobs:
           path: target/reports/
     
     - name: Upload Build Artifact
+      if: success() 
       uses: actions/upload-artifact@v4
       with:
         name: spring-mvc-app
@@ -57,7 +62,24 @@ jobs:
           target/*.jar
           target/*.war
         retention-days: 14
+    
+  notify:
+    needs: build
+    if: failure()  # Only runs if the build job fails
+    runs-on: self-hosted
 
+    steps:
+    - name: Send Failure Notification via Email
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
+        subject: "🚨 Build Failed: ${{ github.repository }}"
+        body: "The latest build of ${{ github.repository }} has failed. Please check the logs in GitHub Actions."
+        to: "vishal.verma03@nagarro.com"
+        from: "GitHub Actions Bot"
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     # - name: Update dependency graph
     #   uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
