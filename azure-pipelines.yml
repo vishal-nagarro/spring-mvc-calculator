@@ -38,6 +38,7 @@ steps:
     continueOnError: true
 
 - task: CreateWorkItem@2
+  condition: failed()
   inputs:
     workItemType: 'Bug'
     title: 'Bug created on build fail'
