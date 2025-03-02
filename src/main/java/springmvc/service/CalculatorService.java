@@ -27,4 +27,5 @@ public class CalculatorService {
     }
 }
 
-// Test code to generate a bug (work-item) on build failure when the pipeline runs
+// Test code to generate a bug (work-item) on build failure when the azure pipeline runs
+Test code to generate a build error (Github Actions) which leads to send an email notification
