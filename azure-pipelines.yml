@@ -37,6 +37,14 @@ steps:
     testResultsFiles: '**/TEST-*.xml' 
     continueOnError: true
 
+- task: CreateWorkItem@2
+  inputs:
+    workItemType: 'Bug'
+    title: 'Bug created on build fail'
+    associate: true
+    assignedTo: '$(ASSIGNEE_EMAIL)'
+    authType: 'pat'
+    authToken: '$(PAT_TOKEN)'
 
 - task: PublishTestResults@2
   inputs:
