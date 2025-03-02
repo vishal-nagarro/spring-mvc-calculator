@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven
+name: Advanced Build Pipeline
 
 on:
   workflow_dispatch: # Enables manual trigger
@@ -15,12 +15,13 @@ on:
   pull_request:
     branches: [ "dev" , "feature" ]
   schedule:
-    - cron: '30 11 * * 3,5'  # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday (3) and Friday (5)
-        
+    - cron: '30 11 * * 3,5'  # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday and Friday
+
 jobs:
   build:
+
     runs-on: self-hosted
-      
+
     steps:
     - uses: actions/checkout@v4
         
@@ -37,8 +38,17 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: test-report
-        path: target/surefire-reports/
+        path: target/site/surefire-report.html
+    
+    - name: Generate Code Coverage Report
+      run: mvn jacoco:report
 
+    - name: Upload Code Coverage Report 
+      uses: actions/upload-artifact@v4
+      with:
+          name: java-code-coverage
+          path: target/reports/
+    
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
