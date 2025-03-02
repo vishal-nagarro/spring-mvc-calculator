@@ -76,7 +76,7 @@ jobs:
         server_port: 465
         username: ${{ secrets.SMTP_USERNAME }}
         password: ${{ secrets.SMTP_PASSWORD }}
-        subject: "🚨 Build Failed: ${{ github.repository }}"
+        subject: "Build Failed: ${{ github.repository }}"
         body: "The latest build of ${{ github.repository }} has failed. Please check the logs in GitHub Actions."
         to: "vishal.verma03@nagarro.com"
         from: "GitHub Actions Bot"
