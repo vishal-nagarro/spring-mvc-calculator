@@ -16,12 +16,17 @@ on:
     branches: [ "dev" , "feature" ]
   schedule:
     - cron: '30 11 * * 3,5'  # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday (3) and Friday (5)
-
+        
 jobs:
   build:
-
+    
     runs-on: ubuntu-latest
-
+    
+    permissions:
+      contents: read
+      packages: read
+      security-events: write  
+      
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 11
@@ -30,6 +35,7 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: maven
+        
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
