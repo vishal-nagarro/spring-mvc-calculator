@@ -67,7 +67,7 @@ jobs:
 
 
   notify:
-    needs: build
+    needs: build_and_test
     if: failure()  # Only runs if the build job fails
     runs-on: self-hosted
 
