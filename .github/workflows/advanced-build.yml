@@ -67,7 +67,7 @@ jobs:
     
   notify:
     needs: build
-    if: failure()  # Only runs if the build job fails
+    # if: failure()  # Only runs if the build job fails
     runs-on: self-hosted
 
     steps:
