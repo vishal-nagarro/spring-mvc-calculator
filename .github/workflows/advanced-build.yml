@@ -30,7 +30,23 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml
       continue-on-error: false  # Fails the pipeline if build fails
+    
+    - name: Upload Build Artifact
+      if: success() 
+      uses: actions/upload-artifact@v4
+      with:
+        name: spring-mvc-app-${{ github.ref_name }}-${{ github.sha }}
+        path: |
+          target/*.jar
+          target/*.war
+        retention-days: 14
+    
+  test:
+    
+    runs-on: self-hosted
 
+    steps:
+  
     - name: Run tests
       run: mvn test
       continue-on-error: true  # Logs failure but allows the pipeline to continue
@@ -54,20 +70,10 @@ jobs:
       with:
           name: code-coverage-report-${{ github.ref_name }}-${{ github.sha }}
           path: target/reports/
-    
-    - name: Upload Build Artifact
-      if: success() 
-      uses: actions/upload-artifact@v4
-      with:
-        name: spring-mvc-app-${{ github.ref_name }}-${{ github.sha }}
-        path: |
-          target/*.jar
-          target/*.war
-        retention-days: 14
-    
+
   notify:
     needs: build
-    # if: failure()  # Only runs if the build job fails
+    if: failure()  # Only runs if the build job fails
     runs-on: self-hosted
 
     steps:
