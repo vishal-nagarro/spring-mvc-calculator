@@ -24,6 +24,7 @@ pool:
 variables:
   JAVA_HOME_11_X64: '/usr/lib/jvm/java-11-openjdk'
 
+# Builds the maven project using jdk 11 
 steps:
 - task: Maven@3
   inputs:
@@ -37,6 +38,7 @@ steps:
     testResultsFiles: '**/TEST-*.xml' 
     continueOnError: true
 
+# Creates workitem (Bug) on build failure
 - task: CreateWorkItem@2
   condition: failed()
   inputs:
@@ -48,6 +50,7 @@ steps:
     authType: 'pat'
     authToken: '$(PAT_TOKEN)'
 
+# Publish and runs JUnit Tests
 - task: PublishTestResults@2
   inputs:
     testResultsFormat: 'JUnit'
@@ -60,6 +63,7 @@ steps:
     Contents: '**/*.war'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
+# On successfull build artifacts are published
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
