@@ -12,7 +12,7 @@ on:
   workflow_dispatch: # Enables manual trigger
   push:
     branches: [ "dev" , "feature" ]
-  pull:
+  pull_request:
     branches: [ "dev" , "feature" ]
   schedule:
     - cron: '30 11 * * 3,5'  # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday and Friday
