@@ -35,7 +35,7 @@ jobs:
       run: mvn surefire-report:report
       continue-on-error: true  # Even if tests fail, generate the report
 
-      - name: Publish Test Report
+    - name: Publish Test Report
       uses: actions/upload-artifact@v4
       with:
         name: test-report-${{ github.ref_name }}-${{ github.sha }}
