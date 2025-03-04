@@ -71,6 +71,12 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=<vishal-nagarro_spring-mvc-calculator>
+            -Dsonar.organization=<vishal-nagarro>
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.branch.name=${{ github.ref_name }}
 
   notify:
     needs: build_and_test
