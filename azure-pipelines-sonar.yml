@@ -25,6 +25,14 @@ variables:
 
 # Builds the maven project using jdk 11
 steps:
+
+  - task: SonarQubePrepare@7
+    inputs:
+      SonarQube: 'SonarQuebe_Server'
+      scannerMode: 'other'
+      configMode: file
+      configFile: 'sonar-project.properties'
+
   - task: Maven@3
     inputs:
       mavenPomFile: "pom.xml"
@@ -49,6 +57,10 @@ steps:
       authType: "pat"
       authToken: "$(PAT_TOKEN)"
 
+  - task: SonarQubeAnalyze@7
+    inputs:
+      jdkversion: 'JAVA_HOME'
+
   # Publish and runs JUnit Tests
   - task: PublishTestResults@2
     inputs:
@@ -70,3 +82,7 @@ steps:
       publishLocation: "Container"
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       goals: "package"
+  
+  - task: SonarQubePublish@7
+    inputs:
+      pollingTimeoutSec: '300'
