@@ -54,7 +54,7 @@ steps:
 - task: PublishTestResults@2
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: '**/TEST-*.xml'
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
     testRunTitle: 'JUnit Test Results'
 
 - task: CopyFiles@2
