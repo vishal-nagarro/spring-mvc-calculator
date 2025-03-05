@@ -22,13 +22,12 @@ pool:
 variables:
   JAVA_HOME_11_X64: "C:/Program Files/Java/jdk-11"
 
-
 # Builds the maven project using jdk 11
 steps:
   - task: SonarQubePrepare@7
     inputs:
-      SonarQube: 'SonarQube_Server'
-      scannerMode: 'other'
+      SonarQube: "SonarQube_Server"
+      scannerMode: "other"
 
   - task: Maven@3
     inputs:
@@ -53,10 +52,6 @@ steps:
       assignedTo: "$(ASSIGNEE_EMAIL)"
       authType: "pat"
       authToken: "$(PAT_TOKEN)"
-
-  - task: SonarQubeAnalyze@7
-    inputs:
-      jdkversion: 'JAVA_HOME_17_X64'
 
   - task: SonarQubePublish@7
     inputs:
