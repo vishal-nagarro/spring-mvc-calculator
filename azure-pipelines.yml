@@ -21,6 +21,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
+  # JAVA_HOME_11_X64: "/usr/lib/jvm/java-11-openjdk"
   JAVA_HOME_11_X64: "C:/Program Files/Java/jdk-11"
 
 # Builds the maven project using jdk 11
@@ -55,6 +56,11 @@ steps:
       testResultsFormat: "JUnit"
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       testRunTitle: "JUnit Test Results"
+
+  - task: PublishCodeCoverageResults@2
+    inputs:
+      summaryFileLocation: "$(System.DefaultWorkingDirectory)/target/reports/surefire.html"
+      pathToSources: "$(System.DefaultWorkingDirectory)/src/main/java"
 
   - task: CopyFiles@2
     inputs:
