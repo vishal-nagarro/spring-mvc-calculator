@@ -56,12 +56,12 @@
 			</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.sonarsource.api.plugin/sonar-plugin-api -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.sonarsource.api.plugin</groupId>
 			<artifactId>sonar-plugin-api</artifactId>
 			<version>10.1.0.809</version>
 			<scope>provided</scope>
-		</dependency>
+		</dependency> -->
 	</dependencies>
 	<build>
 		<finalName>
@@ -147,6 +147,11 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>3.9.1.2184</version>
 			</plugin>
 		</plugins>
 	</build>
