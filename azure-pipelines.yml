@@ -56,11 +56,17 @@ steps:
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       testRunTitle: "JUnit Test Results"
 
+  - task: PublishCodeCoverageResults@2
+    inputs:
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/target/site/jacoco/jacoco.xml'
+      pathToSources: '$(System.DefaultWorkingDirectory)/src/main/java'
+
   - task: CopyFiles@2
     inputs:
       SourceFolder: "$(Build.SourcesDirectory)/target"
       Contents: "**/*.war"
       TargetFolder: "$(Build.ArtifactStagingDirectory)"
+
 
   # On successfull build artifacts are published
   - task: PublishBuildArtifacts@1
