@@ -28,7 +28,7 @@ steps:
     inputs:
       SonarQube: "SonarQuebe_Server"
       scannerMode: "other"
-      configMode: file
+      # configMode: file
       # configFile: 'sonar-project.properties'       ---------------> This needs to be changed to
 
   - task: Maven@3
@@ -59,6 +59,10 @@ steps:
     inputs:
       jdkversion: "JAVA_HOME"
 
+  - task: SonarQubePublish@7
+    inputs:
+      pollingTimeoutSec: "300"
+
   # Publish and runs JUnit Tests
   - task: PublishTestResults@2
     inputs:
@@ -80,7 +84,3 @@ steps:
       publishLocation: "Container"
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       goals: "package"
-
-  - task: SonarQubePublish@7
-    inputs:
-      pollingTimeoutSec: "300"
