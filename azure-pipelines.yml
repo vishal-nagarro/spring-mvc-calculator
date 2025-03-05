@@ -39,6 +39,7 @@ steps:
 
   # Creates workitem (Bug) on build failure
   - task: CreateWorkItem@2
+    need: Maven@3
     condition: failed()
     inputs:
       workItemType: "Bug"
