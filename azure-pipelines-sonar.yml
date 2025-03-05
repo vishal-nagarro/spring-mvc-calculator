@@ -22,14 +22,13 @@ pool:
 variables:
   JAVA_HOME_11_X64: "/usr/lib/jvm/java-11-openjdk"
 
+
 # Builds the maven project using jdk 11
 steps:
   - task: SonarQubePrepare@7
     inputs:
-      SonarQube: "SonarQuebe_Server"
-      scannerMode: "other"
-      # configMode: file
-      # configFile: 'sonar-project.properties'       ---------------> This needs to be changed to
+      SonarQube: 'SonarQube_Server'
+      scannerMode: 'other'
 
   - task: Maven@3
     inputs:
@@ -57,7 +56,7 @@ steps:
 
   - task: SonarQubeAnalyze@7
     inputs:
-      jdkversion: "JAVA_HOME"
+      jdkversion: 'JAVA_HOME_17_X64'
 
   - task: SonarQubePublish@7
     inputs:
