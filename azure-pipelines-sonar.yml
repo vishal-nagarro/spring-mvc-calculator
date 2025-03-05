@@ -26,8 +26,14 @@ variables:
 steps:
   - task: SonarQubePrepare@7
     inputs:
-      SonarQube: "SonarQube_Server"
-      scannerMode: "other"
+      SonarQube: 'SonarQube_Server'
+      scannerMode: 'other'
+      extraProperties: |
+        # Additional properties that will be passed to the scanner, 
+        # Put one key=value per line, example:
+        # sonar.exclusions=**/*.bin
+        sonar.projectKey=spring-mvc-calculator_spring-mvc-calculator_67dc4eeb-b026-4dfb-ad6e-5bea9afa2b60
+        sonar.projectName=spring-mvc-calculator
 
   - task: Maven@3
     inputs:
