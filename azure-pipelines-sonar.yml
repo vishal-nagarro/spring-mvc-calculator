@@ -20,7 +20,7 @@ pool:
   name: "Default"
 
 variables:
-  JAVA_HOME_11_X64: "/usr/lib/jvm/java-11-openjdk"
+  JAVA_HOME_11_X64: "C:/Program Files/Java/jdk-11"
 
 
 # Builds the maven project using jdk 11
