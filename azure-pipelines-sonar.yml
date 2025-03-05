@@ -40,6 +40,10 @@ steps:
       publishJUnitResults: true
       testResultsFiles: "**/TEST-*.xml"
       continueOnError: true
+      -Dsonar.projectKey=<vishal-nagarro_spring-mvc-calculator>
+        -Dsonar.organization=<vishal-nagarro>
+        -Dsonar.host.url=https://sonarcloud.io
+        -Dsonar.login=$(SONAR_TOKEN)
 
   # Creates workitem (Bug) on build failure
   - task: CreateWorkItem@2
