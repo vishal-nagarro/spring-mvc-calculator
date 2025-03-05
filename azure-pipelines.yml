@@ -59,7 +59,7 @@ steps:
 
   - task: PublishCodeCoverageResults@2
     inputs:
-      summaryFileLocation: "$(System.DefaultWorkingDirectory)/target/reports/surefire.html"
+      summaryFileLocation: "$(System.DefaultWorkingDirectory)/target/reports/surefire-reports/TEST-*.xml"
       pathToSources: "$(System.DefaultWorkingDirectory)/src/main/java"
 
   - task: CopyFiles@2
