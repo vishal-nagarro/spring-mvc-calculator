@@ -62,11 +62,18 @@ jobs:
 
   sonarqube:
     runs-on: self-hosted
+    needs: build_and_test
     steps:
       - uses: actions/checkout@v4
         with:
           # Disabling shallow clones is recommended for improving the relevancy of reporting
           fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: "17"
+          distribution: "temurin"
 
       - name: SonarQube Scan
         env:
@@ -79,7 +86,7 @@ jobs:
           -Dsonar.branch.name=${{ github.ref_name }}
 
   notify:
-    needs: build_and_test
+    needs: [build_and_test, sonarqube]
     if: failure() # Only runs if the build job fails
     runs-on: self-hosted
 
