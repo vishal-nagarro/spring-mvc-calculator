@@ -22,13 +22,12 @@ pool:
 variables:
   JAVA_HOME_11_X64: "C:/Program Files/Java/jdk-11"
 
-
 # Builds the maven project using jdk 11
 steps:
   - task: SonarQubePrepare@7
     inputs:
-      SonarQube: 'SonarQube_Server'
-      scannerMode: 'other'
+      SonarQube: "SonarQube_Server"
+      scannerMode: "other"
       extraProperties: |
         # Additional properties that will be passed to the scanner, 
         # Put one key=value per line, example:
@@ -40,7 +39,7 @@ steps:
     inputs:
       mavenPomFile: "pom.xml"
       goals: "clean package verify sonar:sonar"
-      mavenOptions: "-Xmx3072m"
+      mavenOptions: "-X -Xmx3072m"
       javaHomeOption: "JDKVersion"
       jdkVersionOption: "1.11"
       jdkArchitectureOption: "x64"
@@ -48,7 +47,7 @@ steps:
       testResultsFiles: "**/TEST-*.xml"
       continueOnError: true
 
-# Creates workitem (Bug) on build failure
+  # Creates workitem (Bug) on build failure
   - task: CreateWorkItem@2
     condition: failed()
     inputs:
