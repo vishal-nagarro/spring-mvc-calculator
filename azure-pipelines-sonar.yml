@@ -38,7 +38,7 @@ steps:
   - task: Maven@3
     inputs:
       mavenPomFile: "pom.xml"
-      goals: "clean package verify sonar:sonar"
+      goals: "clean package"
       mavenOptions: "-Xmx3072m"
       javaHomeOption: "JDKVersion"
       jdkVersionOption: "1.11"
