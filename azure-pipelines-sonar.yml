@@ -47,6 +47,10 @@ steps:
       testResultsFiles: "**/TEST-*.xml"
       continueOnError: true
 
+  - task: SonarQubeAnalyze@7
+    inputs:
+      jdkversion: 'JAVA_HOME_17_X64'
+
   # Creates workitem (Bug) on build failure
   - task: CreateWorkItem@2
     condition: failed()
