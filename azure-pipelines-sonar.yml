@@ -39,7 +39,7 @@ steps:
     inputs:
       mavenPomFile: "pom.xml"
       goals: "clean package verify sonar:sonar"
-      mavenOptions: "-X -Xmx3072m"
+      mavenOptions: "-Xmx3072m"
       javaHomeOption: "JDKVersion"
       jdkVersionOption: "1.11"
       jdkArchitectureOption: "x64"
