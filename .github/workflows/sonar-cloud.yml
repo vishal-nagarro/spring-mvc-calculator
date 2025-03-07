@@ -28,34 +28,35 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+      # - name: Cache Maven packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.m2
+      #     key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+      #     restore-keys: ${{ runner.os }}-m2
 
       # - name: Build with Maven
       #   run: mvn -B package --file pom.xml
       #   continue-on-error: false # Fails the pipeline if build fails
 
-      - name: Cache SonarQube packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+      # - name: Cache SonarQube packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.sonar/cache
+      #     key: ${{ runner.os }}-sonar
+      #     restore-keys: ${{ runner.os }}-sonar
 
       - name: Build and SonarQube Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           JAVA_HOME: ${{ steps.setup-java.outputs.path }}
-        run:
-          mvn -B package --file pom.xml verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator
-          -Dsonar.organization=vishal-nagarro
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.branch.name=${{ github.ref_name }}
+        run: |
+          mvn -B package --file pom.xml verify org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar \
+          -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator \
+          -Dsonar.organization=vishal-nagarro \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.branch.name=${{ github.ref_name }} \
+          -Dsonar.java.source=11
 
       - name: Run tests
         run: mvn test
