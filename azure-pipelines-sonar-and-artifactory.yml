@@ -6,7 +6,7 @@
 trigger:
   branches:
     include:
-      - dev
+      - dev # Trigger pipeline on changes to the 'dev' branch
 
 schedules:
   - cron: "30 11 * * Wed,Fri" # Runs at 5:00 PM IST (11:30 AM UTC)
@@ -20,12 +20,13 @@ pool:
   name: "Default"
 
 variables:
-  JAVA_HOME_11_X64: "C:/Program Files/Java/jdk-11"
+  JAVA_HOME_11_X64: "C:/Program Files/Java/jdk-11" # Path to JDK 11 installed on self-hosted agent in CentOS VM
 
 # Builds the maven project using jdk 11
 steps:
   - task: SonarQubePrepare@7
     inputs:
+      # Prepare SonarQube analysis
       SonarQube: "SonarQube_Server"
       scannerMode: "other"
       extraProperties: |
@@ -35,6 +36,7 @@ steps:
         sonar.projectKey=spring-mvc-calculator_spring-mvc-calculator_67dc4eeb-b026-4dfb-ad6e-5bea9afa2b60
         sonar.projectName=spring-mvc-calculator
 
+  # Build the Maven project and run tests
   - task: Maven@4
     inputs:
       mavenPomFile: "pom.xml"
@@ -46,7 +48,7 @@ steps:
       mavenVersionOption: "Default"
       mavenAuthenticateFeed: false
       effectivePomSkip: false
-      sonarQubeRunAnalysis: true
+      sonarQubeRunAnalysis: true # Run SonarQube analysis
       sqMavenPluginVersionChoice: "pom"
 
   # Creates workitem (Bug) on build failure
@@ -57,10 +59,11 @@ steps:
       title: "Bug created on build fail"
       associate: true
       associationType: build
-      assignedTo: "$(ASSIGNEE_EMAIL)"
+      assignedTo: "$(ASSIGNEE_EMAIL)" # Assign to specified email
       authType: "pat"
-      authToken: "$(PAT_TOKEN)"
+      authToken: "$(PAT_TOKEN)" # Personal Access Token for authentication
 
+  # Publish SonarQube analysis results
   - task: SonarQubePublish@7
     inputs:
       pollingTimeoutSec: "300"
@@ -72,13 +75,14 @@ steps:
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       testRunTitle: "JUnit Test Results"
 
+  # Copy .war files to the artifact staging directory
   - task: CopyFiles@2
     inputs:
       SourceFolder: "$(Build.SourcesDirectory)/target"
       Contents: "**/*.war"
       TargetFolder: "$(Build.ArtifactStagingDirectory)"
 
-  # On successfull build artifacts are published
+  # Publish build artifacts
   - task: PublishBuildArtifacts@1
     inputs:
       PathtoPublish: "$(Build.ArtifactStagingDirectory)"
@@ -87,10 +91,7 @@ steps:
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       goals: "package"
 
-    # List the contents of the artifact staging directory
-  - script: dir "$(Build.ArtifactStagingDirectory)"
-    displayName: "List contents of artifact staging directory"
-
+  # Upload artifacts to JFrog Artifactory
   - task: JFrogGenericArtifacts@1
     inputs:
       command: "Upload"
