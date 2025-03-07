@@ -49,18 +49,6 @@ steps:
       sonarQubeRunAnalysis: true
       sqMavenPluginVersionChoice: "pom"
 
-  # - task: Maven@3
-  #   inputs:
-  #     mavenPomFile: "pom.xml"
-  #     goals: "clean package"
-  #     mavenOptions: "-Xmx3072m"
-  #     javaHomeOption: "JDKVersion"
-  #     jdkVersionOption: "1.11"
-  #     jdkArchitectureOption: "x64"
-  #     publishJUnitResults: true
-  #     testResultsFiles: "**/TEST-*.xml"
-  #     continueOnError: true
-
   # Creates workitem (Bug) on build failure
   - task: CreateWorkItem@2
     condition: failed()
@@ -90,10 +78,6 @@ steps:
       Contents: "**/*.war"
       TargetFolder: "$(Build.ArtifactStagingDirectory)"
 
-    # List the contents of the artifact staging directory
-  - script: dir "$(Build.ArtifactStagingDirectory)"
-    displayName: "List contents of artifact staging directory"
-
   # On successfull build artifacts are published
   - task: PublishBuildArtifacts@1
     inputs:
@@ -102,6 +86,10 @@ steps:
       publishLocation: "Container"
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       goals: "package"
+
+    # List the contents of the artifact staging directory
+  - script: dir "$(Build.ArtifactStagingDirectory)"
+    displayName: "List contents of artifact staging directory"
 
   - task: JFrogGenericArtifacts@1
     inputs:
@@ -112,7 +100,7 @@ steps:
         {
           "files": [
             {
-              "pattern": "$(Build.ArtifactStagingDirectory)/**/*.war",
+              "pattern": "$(Build.ArtifactStagingDirectory)/*.war",
               "target": "azure-devops-maven-libs-snapshot-local"
             }
           ]
