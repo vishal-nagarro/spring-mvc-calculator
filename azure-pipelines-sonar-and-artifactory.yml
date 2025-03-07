@@ -37,17 +37,17 @@ steps:
 
   - task: Maven@4
     inputs:
-      mavenPomFile: 'pom.xml'
-      goals: 'clean package'
+      mavenPomFile: "pom.xml"
+      goals: "clean package"
       publishJUnitResults: true
-      testResultsFiles: '**/surefire-reports/TEST-*.xml'
-      codeCoverageToolOption: 'JaCoCo'
-      javaHomeOption: 'JDKVersion'
-      mavenVersionOption: 'Default'
+      testResultsFiles: "**/surefire-reports/TEST-*.xml"
+      codeCoverageToolOption: "JaCoCo"
+      javaHomeOption: "JDKVersion"
+      mavenVersionOption: "Default"
       mavenAuthenticateFeed: false
       effectivePomSkip: false
       sonarQubeRunAnalysis: true
-      sqMavenPluginVersionChoice: 'pom'
+      sqMavenPluginVersionChoice: "pom"
 
   # - task: Maven@3
   #   inputs:
@@ -98,22 +98,22 @@ steps:
       publishLocation: "Container"
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       goals: "package"
-  
+
   - task: JFrogGenericArtifacts@1
     inputs:
-      command: 'Upload'
-      connection: 'JFrog_Artifactory_Cloud'
-      specSource: 'taskConfiguration'
+      command: "Upload"
+      connection: "JFrog_Artifactory_Cloud"
+      specSource: "taskConfiguration"
       fileSpec: |
         {
           "files": [
             {
-              "pattern": ".war",
+              "pattern": "$(Build.ArtifactStagingDirectory)/**/*.war",
               "target": "azure-devops-maven-libs-snapshot-local"
             }
           ]
         }
       collectBuildInfo: true
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)'
+      buildName: "$(Build.DefinitionName)"
+      buildNumber: "$(Build.BuildNumber)"
       failNoOp: true
