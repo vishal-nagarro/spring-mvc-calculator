@@ -1,0 +1,100 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  branches:
+    include:
+      - dev
+
+schedules:
+  - cron: "30 11 * * Wed,Fri" # Runs at 5:00 PM IST (11:30 AM UTC)
+    displayName: "Scheduled Build - Wednesday and Friday at 5 PM IST"
+    branches:
+      include:
+        - dev
+    always: true # Ensures the pipeline runs even if there are no code changes
+
+pool:
+  name: "Default"
+
+variables:
+  JAVA_HOME_11_X64: "C:/Program Files/Java/jdk-11"
+
+# Builds the maven project using jdk 11
+steps:
+  - task: SonarQubePrepare@7
+    inputs:
+      SonarQube: "SonarQube_Server"
+      scannerMode: "other"
+      extraProperties: |
+        # Additional properties that will be passed to the scanner, 
+        # Put one key=value per line, example:
+        # sonar.exclusions=**/*.bin
+        sonar.projectKey=spring-mvc-calculator_spring-mvc-calculator_67dc4eeb-b026-4dfb-ad6e-5bea9afa2b60
+        sonar.projectName=spring-mvc-calculator
+
+  - task: Maven@4
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'clean package'
+      publishJUnitResults: true
+      testResultsFiles: '**/surefire-reports/TEST-*.xml'
+      codeCoverageToolOption: 'JaCoCo'
+      javaHomeOption: 'JDKVersion'
+      mavenVersionOption: 'Default'
+      mavenAuthenticateFeed: false
+      effectivePomSkip: false
+      sonarQubeRunAnalysis: true
+      sqMavenPluginVersionChoice: 'pom'
+
+  # - task: Maven@3
+  #   inputs:
+  #     mavenPomFile: "pom.xml"
+  #     goals: "clean package"
+  #     mavenOptions: "-Xmx3072m"
+  #     javaHomeOption: "JDKVersion"
+  #     jdkVersionOption: "1.11"
+  #     jdkArchitectureOption: "x64"
+  #     publishJUnitResults: true
+  #     testResultsFiles: "**/TEST-*.xml"
+  #     continueOnError: true
+
+  # Creates workitem (Bug) on build failure
+  - task: CreateWorkItem@2
+    condition: failed()
+    inputs:
+      workItemType: "Bug"
+      title: "Bug created on build fail"
+      associate: true
+      associationType: build
+      assignedTo: "$(ASSIGNEE_EMAIL)"
+      authType: "pat"
+      authToken: "$(PAT_TOKEN)"
+
+  - task: SonarQubePublish@7
+    inputs:
+      pollingTimeoutSec: "300"
+
+  # Publish and runs JUnit Tests
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "**/surefire-reports/TEST-*.xml"
+      testRunTitle: "JUnit Test Results"
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: "$(Build.SourcesDirectory)/target"
+      Contents: "**/*.war"
+      TargetFolder: "$(Build.ArtifactStagingDirectory)"
+
+  # On successfull build artifacts are published
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+      ArtifactName: "drop"
+      publishLocation: "Container"
+      testResultsFiles: "**/surefire-reports/TEST-*.xml"
+      goals: "package"
