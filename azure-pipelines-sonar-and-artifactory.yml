@@ -98,3 +98,22 @@ steps:
       publishLocation: "Container"
       testResultsFiles: "**/surefire-reports/TEST-*.xml"
       goals: "package"
+  
+  - task: JFrogGenericArtifacts@1
+    inputs:
+      command: 'Upload'
+      connection: 'JFrog_Artifactory_Cloud'
+      specSource: 'taskConfiguration'
+      fileSpec: |
+        {
+          "files": [
+            {
+              "pattern": ".war",
+              "target": "azure-devops-maven-libs-snapshot-local"
+            }
+          ]
+        }
+      collectBuildInfo: true
+      buildName: '$(Build.DefinitionName)'
+      buildNumber: '$(Build.BuildNumber)'
+      failNoOp: true
