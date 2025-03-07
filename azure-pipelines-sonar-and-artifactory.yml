@@ -90,6 +90,10 @@ steps:
       Contents: "**/*.war"
       TargetFolder: "$(Build.ArtifactStagingDirectory)"
 
+    # List the contents of the artifact staging directory
+  - script: dir "$(Build.ArtifactStagingDirectory)"
+    displayName: "List contents of artifact staging directory"
+
   # On successfull build artifacts are published
   - task: PublishBuildArtifacts@1
     inputs:
