@@ -51,6 +51,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           JAVA_HOME: ${{ steps.setup-java.outputs.path }}
         run: |
+          export MAVEN_OPTS="-Dorg.apache.jasper.compiler.disableTldScanning=true"
           mvn -B package --file pom.xml verify org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar \
           -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator \
           -Dsonar.organization=vishal-nagarro \
