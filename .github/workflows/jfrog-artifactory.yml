@@ -11,11 +11,11 @@ name: JFrog Artifactory Pipeline
 on:
   workflow_dispatch: # Enables manual trigger
   push:
-    branches: [ "dev" , "feature" ]
+    branches: [ "dev", "feature" ]
   pull_request:
-    branches: [ "dev" , "feature" ]
+    branches: [ "dev", "feature" ]
   schedule:
-    - cron: '30 11 * * 3,5'  # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday and Friday
+  - cron: '30 11 * * 3,5' # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday and Friday
 
 jobs:
   build_and_test:
@@ -25,38 +25,38 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for accurate git info
-        
+        fetch-depth: 0 # Fetch all history for accurate git info
+
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-      continue-on-error: false  # Fails the pipeline if build fails
+      continue-on-error: false # Fails the pipeline if build fails
 
     - name: Run tests
       run: mvn test
-      continue-on-error: true  # Logs failure but allows the pipeline to continue
+      continue-on-error: true # Logs failure but allows the pipeline to continue
 
     - name: Generate test report
       run: mvn surefire-report:report
-      continue-on-error: true  # Even if tests fail, generate the report
+      continue-on-error: true # Even if tests fail, generate the report
 
     - name: Publish Test Report
       uses: actions/upload-artifact@v4
       with:
         name: test-report-${{ github.ref_name }}-${{ github.sha }}
         path: target/surefire-reports/
-    
+
     - name: Generate Code Coverage Report
       run: mvn jacoco:report
       continue-on-error: true
-      
-    - name: Upload Code Coverage Report 
+
+    - name: Upload Code Coverage Report
       uses: actions/upload-artifact@v4
       with:
-          name: code-coverage-report-${{ github.ref_name }}-${{ github.sha }}
-          path: target/reports/
-    
+        name: code-coverage-report-${{ github.ref_name }}-${{ github.sha }}
+        path: target/reports/
+
     - name: Upload Build Artifact
-      if: success() 
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: spring-mvc-app-${{ github.ref_name }}-${{ github.sha }}
@@ -65,10 +65,28 @@ jobs:
           target/*.war
         retention-days: 14
 
+  jfrog_artifactory:
+    needs: build_and_test
+    runs-on: self-hosted
+
+    env:
+      JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+
+    steps:
+    - name: JFrog Artifactory Setup
+      uses: jfrog/setup-jfrog-cli@v4
+    - run: |
+        # Ping the server
+        jf rt ping
+
+    - name: JFrog Artifactory Publish
+      run: |
+        jfrog rt u "target/*.jar" ${{ secrets.JF_ARTIFACTORY_REPO }} --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
+        jfrog rt u "target/*.war" ${{ secrets.JF_ARTIFACTORY_REPO }} --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
 
   notify:
     needs: build_and_test
-    if: failure()  # Only runs if the build job fails
+    if: failure() # Only runs if the build job fails
     runs-on: self-hosted
 
     steps:
