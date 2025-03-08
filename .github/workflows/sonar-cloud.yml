@@ -56,8 +56,7 @@ jobs:
           -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator \
           -Dsonar.organization=vishal-nagarro \
           -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.branch.name=${{ github.ref_name }} \
-          -Dsonar.java.source=11
+          -Dsonar.branch.name=${{ github.ref_name }}
 
       - name: Run tests
         run: mvn test
