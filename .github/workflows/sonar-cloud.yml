@@ -35,9 +35,9 @@ jobs:
     #     key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
     #     restore-keys: ${{ runner.os }}-m2
 
-    # - name: Build with Maven
-    #   run: mvn -B package --file pom.xml
-    #   continue-on-error: false # Fails the pipeline if build fails
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+      continue-on-error: false # Fails the pipeline if build fails
 
     # - name: Cache SonarQube packages
     #   uses: actions/cache@v4
@@ -46,51 +46,71 @@ jobs:
     #     key: ${{ runner.os }}-sonar
     #     restore-keys: ${{ runner.os }}-sonar
 
-    - name: Build and SonarQube Scan
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        JAVA_HOME: ${{ steps.setup-java.outputs.path }}
-      run: |
-        export MAVEN_OPTS="-Dorg.apache.jasper.compiler.disableTldScanning=true"
-        mvn -B package --file pom.xml verify org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar \
-        -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator \
-        -Dsonar.organization=vishal-nagarro \
-        -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.branch.name=${{ github.ref_name }}
+    # - name: Build and SonarQube Scan
+    #   env:
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #     JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+    #   run: |
+    #     export MAVEN_OPTS="-Dorg.apache.jasper.compiler.disableTldScanning=true"
+    #     mvn -B package --file pom.xml verify org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar \
+    #     -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator \
+    #     -Dsonar.organization=vishal-nagarro \
+    #     -Dsonar.host.url=https://sonarcloud.io \
+    #     -Dsonar.branch.name=${{ github.ref_name }}
 
     - name: Run tests
       run: mvn test
       continue-on-error: true # Logs failure but allows the pipeline to continue
+    
+    - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator
+            -Dsonar.organization=vishal-nagarro
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.sources=src/main/java 
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.java.libraries=target/lib
+            -Dsonar.java.test.libraries=target/test-classes
+            -Dsonar.java.test.binaries=target/test-classes
+            -Dsonar.junit.reportPaths=target/surefire-reports
 
-    - name: Generate test report
-      run: mvn surefire-report:report
-      continue-on-error: true # Even if tests fail, generate the report
+    
+    # - name: Generate test report
+    #   run: mvn surefire-report:report
+    #   continue-on-error: true # Even if tests fail, generate the report
 
-    - name: Publish Test Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-report-${{ github.ref_name }}-${{ github.sha }}
-        path: target/surefire-reports/
+    # - name: Publish Test Report
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: test-report-${{ github.ref_name }}-${{ github.sha }}
+    #     path: target/surefire-reports/
 
-    - name: Generate Code Coverage Report
-      run: mvn jacoco:report
-      continue-on-error: true
+    # - name: Generate Code Coverage Report
+    #   run: mvn jacoco:report
+    #   continue-on-error: true
 
-    - name: Upload Code Coverage Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: code-coverage-report-${{ github.ref_name }}-${{ github.sha }}
-        path: target/reports/
+    # - name: Upload Code Coverage Report
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: code-coverage-report-${{ github.ref_name }}-${{ github.sha }}
+    #     path: target/reports/
 
-    - name: Upload Build Artifact
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: spring-mvc-app-${{ github.ref_name }}-${{ github.sha }}
-        path: |
-          target/*.jar
-          target/*.war
-        retention-days: 14
+    # - name: Upload Build Artifact
+    #   if: success()
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: spring-mvc-app-${{ github.ref_name }}-${{ github.sha }}
+    #     path: |
+    #       target/*.jar
+    #       target/*.war
+    #     retention-days: 14
+
 
   notify:
     needs: [ build_and_test ]
