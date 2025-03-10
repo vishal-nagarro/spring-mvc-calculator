@@ -75,7 +75,6 @@ jobs:
             -Dsonar.branch.name=${{ github.ref_name }}
             -Dsonar.sources=src/main/java 
             -Dsonar.java.binaries=target/classes
-            -Dsonar.java.libraries=target/lib
             -Dsonar.java.test.libraries=target/test-classes
             -Dsonar.java.test.binaries=target/test-classes
             -Dsonar.junit.reportPaths=target/surefire-reports
