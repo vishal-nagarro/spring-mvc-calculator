@@ -6,15 +6,15 @@
 trigger:
   branches:
     include:
-      - dev # Trigger pipeline on changes to the 'dev' branch
+    - dev # Trigger pipeline on changes to the 'dev' branch
 
 schedules:
-  - cron: "30 11 * * Wed,Fri" # Runs at 5:00 PM IST (11:30 AM UTC)
-    displayName: "Scheduled Build - Wednesday and Friday at 5 PM IST"
-    branches:
-      include:
-        - dev
-    always: true # Ensures the pipeline runs even if there are no code changes
+- cron: "30 11 * * Wed,Fri" # Runs at 5:00 PM IST (11:30 AM UTC)
+  displayName: "Scheduled Build - Wednesday and Friday at 5 PM IST"
+  branches:
+    include:
+    - dev
+  always: true # Ensures the pipeline runs even if there are no code changes
 
 pool:
   name: "Default"
@@ -24,89 +24,89 @@ variables:
 
 # Builds the maven project using jdk 11
 steps:
-  - task: SonarQubePrepare@7
-    inputs:
-      # Prepare SonarQube analysis
-      SonarQube: "SonarQube_Server"
-      scannerMode: "other"
-      extraProperties: |
-        # Additional properties that will be passed to the scanner, 
-        # Put one key=value per line, example:
-        # sonar.exclusions=**/*.bin
-        sonar.projectKey=spring-mvc-calculator_spring-mvc-calculator_67dc4eeb-b026-4dfb-ad6e-5bea9afa2b60
-        sonar.projectName=spring-mvc-calculator
+- task: SonarQubePrepare@7
+  inputs:
+    # Prepare SonarQube analysis
+    SonarQube: "SonarQube_Server"
+    scannerMode: "other"
+    extraProperties: |
+      # Additional properties that will be passed to the scanner, 
+      # Put one key=value per line, example:
+      # sonar.exclusions=**/*.bin
+      sonar.projectKey=spring-mvc-calculator_spring-mvc-calculator_67dc4eeb-b026-4dfb-ad6e-5bea9afa2b60
+      sonar.projectName=spring-mvc-calculator
 
-  # Build the Maven project and run tests
-  - task: Maven@4
-    inputs:
-      mavenPomFile: "pom.xml"
-      goals: "clean package"
-      publishJUnitResults: true
-      testResultsFiles: "**/surefire-reports/TEST-*.xml"
-      codeCoverageToolOption: "JaCoCo"
-      javaHomeOption: "JDKVersion"
-      mavenVersionOption: "Default"
-      mavenAuthenticateFeed: false
-      effectivePomSkip: false
-      sonarQubeRunAnalysis: true # Run SonarQube analysis
-      sqMavenPluginVersionChoice: "pom"
+# Build the Maven project and run tests
+- task: Maven@4
+  inputs:
+    mavenPomFile: "pom.xml"
+    goals: "clean package"
+    publishJUnitResults: true
+    testResultsFiles: "**/surefire-reports/TEST-*.xml"
+    codeCoverageToolOption: "JaCoCo"
+    javaHomeOption: "JDKVersion"
+    mavenVersionOption: "Default"
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: true # Run SonarQube analysis
+    sqMavenPluginVersionChoice: "pom"
 
-  # Creates workitem (Bug) on build failure
-  - task: CreateWorkItem@2
-    condition: failed()
-    inputs:
-      workItemType: "Bug"
-      title: "Bug created on build fail"
-      associate: true
-      associationType: build
-      assignedTo: "$(ASSIGNEE_EMAIL)" # Assign to specified email
-      authType: "pat"
-      authToken: "$(PAT_TOKEN)" # Personal Access Token for authentication
+# Creates workitem (Bug) on build failure
+- task: CreateWorkItem@2
+  condition: failed()
+  inputs:
+    workItemType: "Bug"
+    title: "Bug created on build fail"
+    associate: true
+    associationType: build
+    assignedTo: "$(ASSIGNEE_EMAIL)" # Assign to specified email
+    authType: "pat"
+    authToken: "$(PAT_TOKEN)" # Personal Access Token for authentication
 
-  # Publish SonarQube analysis results
-  - task: SonarQubePublish@7
-    inputs:
-      pollingTimeoutSec: "300"
+# Publish SonarQube analysis results
+- task: SonarQubePublish@7
+  inputs:
+    pollingTimeoutSec: "300"
 
-  # Publish and runs JUnit Tests
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: "JUnit"
-      testResultsFiles: "**/surefire-reports/TEST-*.xml"
-      testRunTitle: "JUnit Test Results"
+# Publish and runs JUnit Tests
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: "JUnit"
+    testResultsFiles: "**/surefire-reports/TEST-*.xml"
+    testRunTitle: "JUnit Test Results"
 
-  # Copy .war files to the artifact staging directory
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: "$(Build.SourcesDirectory)/target"
-      Contents: "**/*.war"
-      TargetFolder: "$(Build.ArtifactStagingDirectory)"
+# Copy .war files to the artifact staging directory
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: "$(Build.SourcesDirectory)/target"
+    Contents: "**/*.war"
+    TargetFolder: "$(Build.ArtifactStagingDirectory)"
 
-  # Publish build artifacts
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: "$(Build.ArtifactStagingDirectory)"
-      ArtifactName: "drop"
-      publishLocation: "Container"
-      testResultsFiles: "**/surefire-reports/TEST-*.xml"
-      goals: "package"
+# Publish build artifacts
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+    ArtifactName: "drop"
+    publishLocation: "Container"
+    testResultsFiles: "**/surefire-reports/TEST-*.xml"
+    goals: "package"
 
-  # Upload artifacts to JFrog Artifactory
-  - task: JFrogGenericArtifacts@1
-    inputs:
-      command: "Upload"
-      connection: "JFrog_Artifactory_Cloud"
-      specSource: "taskConfiguration"
-      fileSpec: |
-        {
-          "files": [
-            {
-              "pattern": "$(Build.ArtifactStagingDirectory)/*.war",
-              "target": "azure-devops-maven-libs-snapshot-local"
-            }
-          ]
-        }
-      collectBuildInfo: true
-      buildName: "$(Build.DefinitionName)"
-      buildNumber: "$(Build.BuildNumber)"
-      failNoOp: true
+# Upload artifacts to JFrog Artifactory
+- task: JFrogGenericArtifacts@1
+  inputs:
+    command: "Upload"
+    connection: "JFrog_Artifactory_Cloud"
+    specSource: "taskConfiguration"
+    fileSpec: |
+      {
+        "files": [
+          {
+            "pattern": "$(Build.ArtifactStagingDirectory)/*.war",
+            "target": "azure-devops-maven-libs-snapshot-local/$(Build.BuildNumber)/"
+          }
+        ]
+      }
+    collectBuildInfo: true
+    buildName: "$(Build.DefinitionName)"
+    buildNumber: "$(Build.BuildNumber)"
+    failNoOp: true
