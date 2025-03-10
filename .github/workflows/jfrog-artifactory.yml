@@ -30,10 +30,6 @@ jobs:
         run: mvn -B package --file pom.xml
         continue-on-error: false # Fails the pipeline if build fails
 
-      - name: Run tests
-        run: mvn test
-        continue-on-error: true # Logs failure but allows the pipeline to continue
-
       - name: Generate test report
         run: mvn surefire-report:report
         continue-on-error: true # Even if tests fail, generate the report
