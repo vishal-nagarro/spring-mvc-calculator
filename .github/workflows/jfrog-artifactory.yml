@@ -11,78 +11,77 @@ name: JFrog Artifactory Pipeline
 on:
   workflow_dispatch: # Enables manual trigger
   push:
-    branches: [ "dev", "feature" ]
+    branches: ["dev", "feature"]
   pull_request:
-    branches: [ "dev", "feature" ]
+    branches: ["dev", "feature"]
   schedule:
-  - cron: '30 11 * * 3,5' # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday and Friday
+    - cron: "30 11 * * 3,5" # Runs at 11:30 AM UTC (5:00 PM IST) every Wednesday and Friday
 
 jobs:
   build_and_test:
-
     runs-on: self-hosted
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 # Fetch all history for accurate git info
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for accurate git info
 
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-      continue-on-error: false # Fails the pipeline if build fails
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+        continue-on-error: false # Fails the pipeline if build fails
 
-    - name: Run tests
-      run: mvn test
-      continue-on-error: true # Logs failure but allows the pipeline to continue
+      - name: Run tests
+        run: mvn test
+        continue-on-error: true # Logs failure but allows the pipeline to continue
 
-    - name: Generate test report
-      run: mvn surefire-report:report
-      continue-on-error: true # Even if tests fail, generate the report
+      - name: Generate test report
+        run: mvn surefire-report:report
+        continue-on-error: true # Even if tests fail, generate the report
 
-    - name: Publish Test Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-report-${{ github.ref_name }}-${{ github.sha }}
-        path: target/surefire-reports/
+      - name: Publish Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-${{ github.ref_name }}-${{ github.sha }}
+          path: target/surefire-reports/
 
-    - name: Generate Code Coverage Report
-      run: mvn jacoco:report
-      continue-on-error: true
+      - name: Generate Code Coverage Report
+        run: mvn jacoco:report
+        continue-on-error: true
 
-    - name: Upload Code Coverage Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: code-coverage-report-${{ github.ref_name }}-${{ github.sha }}
-        path: target/reports/
+      - name: Upload Code Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report-${{ github.ref_name }}-${{ github.sha }}
+          path: target/reports/
 
-    - name: Upload Build Artifact
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: spring-mvc-app-${{ github.ref_name }}-${{ github.sha }}
-        path: |
-          target/*.jar
-          target/*.war
-        retention-days: 14
+      - name: Upload Build Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-mvc-app-${{ github.ref_name }}-${{ github.sha }}
+          path: |
+            target/*.jar
+            target/*.war
+          retention-days: 14
 
   jfrog_artifactory:
     needs: build_and_test
     runs-on: self-hosted
 
     env:
-      JFROG_ACCESS_TOKEN: ${{ secrets.JFR OG_ACCESS_TOKEN }}
+      JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
 
     steps:
-    - name: JFrog Artifactory Setup
-      uses: jfrog/setup-jfrog-cli@v4
-    - run: |
-        # Ping the server
-        jf rt ping
+      - name: JFrog Artifactory Setup
+        uses: jfrog/setup-jfrog-cli@v4
+      - run: |
+          # Ping the server
+          jf rt ping
 
-    - name: JFrog Artifactory Publish
-      run: |
-        jfrog rt u "target/*.jar" ${{ secrets.JF_ARTIFACTORY_REPO }} --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
-        jfrog rt u "target/*.war" ${{ secrets.JF_ARTIFACTORY_REPO }} --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
+      - name: JFrog Artifactory Publish
+        run: |
+          jfrog rt u "target/*.jar" ${{ secrets.JF_ARTIFACTORY_REPO }}/$(date +%Y%m%d%H%M%S)/ --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
+          jfrog rt u "target/*.war" ${{ secrets.JF_ARTIFACTORY_REPO }}/$(date +%Y%m%d%H%M%S)/ --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
 
   notify:
     needs: build_and_test
@@ -90,17 +89,17 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - name: Send Failure Notification via Email
-      uses: dawidd6/action-send-mail@v3
-      with:
-        server_address: smtp.gmail.com
-        server_port: 465
-        username: ${{ secrets.SMTP_USERNAME }}
-        password: ${{ secrets.SMTP_PASSWORD }}
-        subject: "Build Failed: ${{ github.repository }}"
-        body: "The latest build of ${{ github.repository }} has failed. Please check the logs in GitHub Actions."
-        to: ${{ secrets.NOTIFICATION_EMAIL }}
-        from: "GitHub Actions Bot"
+      - name: Send Failure Notification via Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "Build Failed: ${{ github.repository }}"
+          body: "The latest build of ${{ github.repository }} has failed. Please check the logs in GitHub Actions."
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub Actions Bot"
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     # - name: Update dependency graph
     #   uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
