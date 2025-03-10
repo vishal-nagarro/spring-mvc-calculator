@@ -80,7 +80,7 @@ jobs:
 
       - name: JFrog Artifactory Publish
         run: |
-          jfrog rt u "target/*.war" ${{ secrets.JF_ARTIFACTORY_REPO }}/$(date +%Y-%m-%d_%H-%M-%S)/ --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
+          jfrog rt u "**/*.war" ${{ secrets.JF_ARTIFACTORY_REPO }}/$(date +%Y-%m-%d_%H-%M-%S)/ --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
 
   notify:
     needs: build_and_test
