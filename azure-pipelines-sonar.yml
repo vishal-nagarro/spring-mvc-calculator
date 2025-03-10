@@ -34,7 +34,6 @@ steps:
       # sonar.exclusions=**/*.bin
       sonar.projectKey=spring-mvc-calculator_spring-mvc-calculator_67dc4eeb-b026-4dfb-ad6e-5bea9afa2b60
       sonar.projectName=spring-mvc-calculator
-      sonar.projectName=spring-mvc-calculator sonar.java.coveragePlugin=jacoco sonar.coverage.jacoco.xmlReportPaths=target/jacoco.exec
 
 - task: Maven@4
   inputs:
