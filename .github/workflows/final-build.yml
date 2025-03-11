@@ -71,7 +71,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: .
+          projectBaseDir:
           args: >
             -Dsonar.projectKey=vishal-nagarro_spring-mvc-calculator
             -Dsonar.organization=vishal-nagarro
@@ -83,7 +83,7 @@ jobs:
             -Dsonar.java.test.libraries=target/test-classes
             -Dsonar.java.test.binaries=target/test-classes
             -Dsonar.junit.reportPaths=target/surefire-reports
-            -Dsonar.jacoco.reportPaths=target/jacoco.exec
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
       - name: Upload Build Artifact
         if: success()
