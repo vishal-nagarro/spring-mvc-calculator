@@ -49,17 +49,17 @@ jobs:
       - name: Generate test report
         run: mvn surefire-report:report
         continue-on-error: true # Even if tests fail, generate the report
-  
+
       - name: Publish Test Report
         uses: actions/upload-artifact@v4
         with:
           name: test-report-${{ github.ref_name }}-${{ github.sha }}
           path: target/surefire-reports/
-  
+
       - name: Generate Code Coverage Report
         run: mvn jacoco:report
         continue-on-error: true
-  
+
       - name: Upload Code Coverage Report
         uses: actions/upload-artifact@v4
         with:
@@ -83,6 +83,7 @@ jobs:
             -Dsonar.java.test.libraries=target/test-classes
             -Dsonar.java.test.binaries=target/test-classes
             -Dsonar.junit.reportPaths=target/surefire-reports
+            -Dsonar.jacoco.reportPaths=target/jacoco.exec
 
       - name: Upload Build Artifact
         if: success()
@@ -112,7 +113,6 @@ jobs:
         run: |
           jfrog rt u "**/*.war" ${{ secrets.JF_ARTIFACTORY_REPO }}/$(date +%Y-%m-%d_%H-%M-%S)/ --build-name=${{ github.run_id }} --build-number=${{ github.run_number }}
 
-  
   notify:
     needs: [build_and_test]
     if: failure() # Only runs if the build job fails
