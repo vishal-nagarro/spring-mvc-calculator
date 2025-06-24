@@ -1,0 +1,3 @@
+ci/cd pipeline
+
+  create a ci pipeline for java based project using maven build. no need to add unit test or any other step. just build it
