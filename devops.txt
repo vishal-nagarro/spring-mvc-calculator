@@ -1,3 +1,1 @@
-ci/cd pipeline
-
-  create a ci pipeline for java based project using maven build. no need to add unit test or any other step. just build it
+create a github actions ci pipeline for building java based project using maven build. no need to add unit test or any other step. just build it using maven. it should also have auto trigger from feature-* branches
