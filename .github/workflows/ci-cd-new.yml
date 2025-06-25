@@ -1,6 +1,7 @@
 name: CI/CD Pipeline - Spring MVC Calculator
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
@@ -9,7 +10,6 @@ on:
     branches:
       - dev
       - 'feature/**'
-  workflow_dispatch:
   schedule:
     - cron: '30 11 * * 3' # Every Wednesday at 11:30 UTC
     - cron: '30 11 * * 5' # Every Friday at 11:30 UTC
