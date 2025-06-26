@@ -1,0 +1,78 @@
+name: CI/CD - Spring MVC Calculator
+
+on:
+  push:
+    branches:
+      - dev
+      - 'feature/**'
+  pull_request:
+    branches:
+      - dev
+      - 'feature/**'
+  workflow_dispatch:
+
+jobs:
+  build-test-artifacts:
+    runs-on: self-hosted
+
+    env:
+      JAVA_HOME: /usr/lib/jvm/java-11-openjdk
+      MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 11
+
+      - name: Set up Maven
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 11
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+
+      - name: Run JUnit tests
+        run: mvn test
+
+      - name: Generate Surefire (JUnit) reports
+        run: mvn surefire-report:report
+
+      - name: Generate JaCoCo code coverage report
+        run: mvn jacoco:report
+
+      - name: Gather artifact metadata
+        id: vars
+        run: |
+          echo "branch=$(echo ${{ github.ref_name }} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
+          echo "commit=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Upload application artifacts (.jar/.war)
+        uses: actions/upload-artifact@v3
+        with:
+          name: spring-mvc-app-${{ steps.vars.outputs.branch }}-${{ steps.vars.outputs.commit }}
+          path: |
+            target/*.jar
+            target/*.war
+          retention-days: 14
+
+      - name: Upload JUnit test reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports-${{ steps.vars.outputs.branch }}-${{ steps.vars.outputs.commit }}
+          path: target/surefire-reports/
+          retention-days: 14
+
+      - name: Upload JaCoCo coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports-${{ steps.vars.outputs.branch }}-${{ steps.vars.outputs.commit }}
+          path: target/site/jacoco/
+          retention-days: 14
