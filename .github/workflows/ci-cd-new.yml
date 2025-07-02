@@ -1,0 +1,56 @@
+name: CI/CD Pipeline - Spring MVC Calculator
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+      - 'feature-*'
+  pull_request:
+    branches:
+      - dev
+      - 'feature-*'
+
+jobs:
+  build-test-report-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Build with Maven
+        run: mvn clean compile
+
+      - name: Run JUnit tests
+        run: mvn test
+
+      - name: Generate JaCoCo code coverage report
+        run: mvn jacoco:report
+
+      - name: Package application (JAR/WAR)
+        run: mvn package
+
+      - name: Upload application artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-package
+          path: target/*.jar
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: target/surefire-reports/
+
+      - name: Upload JaCoCo code coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: target/site/jacoco/
