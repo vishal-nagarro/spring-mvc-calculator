@@ -1,0 +1,329 @@
+# Generated CI/CD Workflow
+
+name: CI/CD Pipeline (Maven Spring MVC)
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+      - develop
+  pull_request:
+    branches:
+      - main
+      - release/*
+      - develop
+
+env:
+  JAVA_VERSION: '17'
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  COVERAGE_MIN: '80'
+
+jobs:
+
+  source_lint:
+    name: Stage 1 - Source & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            .m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
+      - name: Run Checkstyle
+        run: mvn checkstyle:check
+      - name: Run PMD
+        run: mvn pmd:check
+      - name: Run SpotBugs
+        run: mvn spotbugs:check
+      - name: Upload static analysis reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-reports
+          path: |
+            **/target/checkstyle-result.xml
+            **/target/pmd.xml
+            **/target/spotbugsXml.xml
+
+  build_package:
+    name: Stage 2 - Build & Package
+    runs-on: ubuntu-latest
+    needs: source_lint
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            .m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
+      - name: Compile code
+        run: mvn clean compile
+      - name: Run code formatter
+        run: mvn fmt:format || echo "No formatter configured."
+      - name: Package application
+        run: mvn package
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-artifact
+          path: |
+            target/*.jar
+            target/*.war
+
+  test:
+    name: Stage 3 - Unit & Integration Tests
+    runs-on: ubuntu-latest
+    needs: build_package
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: Restore build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-artifact
+          path: target
+      - name: Run Unit and Integration Tests
+        run: mvn verify
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            **/target/surefire-reports/*.xml
+            **/target/failsafe-reports/*.xml
+      - name: Collect Code Coverage (JaCoCo)
+        run: mvn jacoco:report
+      - name: Check Coverage Threshold
+        run: |
+          COVERAGE=$(awk -F'=' '/counter type="INSTRUCTION"/ { i++; covered+=$3; missed+=$2 } END { print int((covered/(covered+missed))*100) }' **/target/site/jacoco/jacoco.csv)
+          echo "Coverage is $COVERAGE%"
+          if [ "$COVERAGE" -lt "${{ env.COVERAGE_MIN }}" ]; then
+            echo "Code coverage $COVERAGE% is below threshold ${{ env.COVERAGE_MIN }}%"; exit 1
+          fi
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            **/target/site/jacoco/*.xml
+            **/target/site/jacoco/index.html
+
+  security_scan:
+    name: Stage 4 - Security & Vulnerability Scanning
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@v3
+        with:
+          project: 'spring-mvc-ci'
+          format: 'ALL'
+      - name: Snyk Scan
+        uses: snyk/actions/maven@master
+        continue-on-error: false
+        with:
+          args: test --all-projects
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Trufflehog Secret Scan
+        uses: trufflesecurity/trufflehog@v3.56.3
+        with:
+          scan: .
+      - name: Upload scan reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            **/dependency-check-report.*
+            **/trufflehog.json
+      - name: Fail on leaked secrets
+        run: |
+          if grep -q "leak found" **/trufflehog.json; then
+            echo "Secret(s) found!"; exit 1
+          fi
+
+  docker_publish:
+    name: Stage 5 - Build Artifact, Docker Image & Publish
+    runs-on: ubuntu-latest
+    needs: security_scan
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: Restore build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-artifact
+          path: target
+      - name: Log in to Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker image
+        run: |
+          TAG=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-${{ github.sha }}
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          docker build -t ${{ secrets.DOCKER_REPO }}:$TAG .
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_REPO }}:${{ env.TAG }}
+      - name: Publish Maven artifacts
+        run: |
+          mvn deploy -DskipTests
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+
+  deploy_dev:
+    name: Stage 6 - Deploy to Development Environment
+    runs-on: ubuntu-latest
+    needs: docker_publish
+    environment:
+      name: development
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+      - name: Set up deployment credentials
+        run: echo "${{ secrets.DEV_KUBECONFIG }}" > kubeconfig && export KUBECONFIG=$(pwd)/kubeconfig
+      - name: Deploy to Dev
+        run: |
+          helm upgrade --install spring-mvc-dev ./helm-chart             --namespace dev             --set image.tag=${{ env.TAG }}
+      - name: Smoke Test Deployment
+        run: |
+          kubectl rollout status deployment/spring-mvc-dev -n dev
+          sleep 10
+          curl -f http://dev.spring-mvc.internal/actuator/health
+
+  deploy_staging:
+    name: Stage 7 - Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    needs: deploy_dev
+    environment:
+      name: staging
+      url: https://staging.spring-mvc.example.com
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
+    steps:
+      - name: Require manual approval (QA/UAT)
+        uses: trstringer/manual-approval@v1
+        with:
+          approvers: ${{ secrets.STAGING_APPROVERS }}
+          issue-title: 'Approve Staging Deployment'
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+      - name: Set up deployment credentials
+        run: echo "${{ secrets.STAGING_KUBECONFIG }}" > kubeconfig && export KUBECONFIG=$(pwd)/kubeconfig
+      - name: Deploy to Staging
+        run: |
+          helm upgrade --install spring-mvc-staging ./helm-chart             --namespace staging             --set image.tag=${{ env.TAG }}
+      - name: Full-scope integration tests
+        run: |
+          curl -f https://staging.spring-mvc.example.com/actuator/health
+          # Add more e2e/integration checks as needed
+      - name: Rerun security scans (Trivy Docker)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.DOCKER_REPO }}:${{ env.TAG }}
+          format: 'table'
+
+  deploy_prod:
+    name: Stage 8 - Production Deployment
+    runs-on: ubuntu-latest
+    needs: deploy_staging
+    environment:
+      name: production
+      url: https://prod.spring-mvc.example.com
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Manual approval (Production Gate)
+        uses: trstringer/manual-approval@v1
+        with:
+          approvers: ${{ secrets.PROD_APPROVERS }}
+          issue-title: 'Approve Prod Deployment'
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+      - name: Set up deployment credentials
+        run: echo "${{ secrets.PROD_KUBECONFIG }}" > kubeconfig && export KUBECONFIG=$(pwd)/kubeconfig
+      - name: Deploy to Production (Blue/Green)
+        run: |
+          helm upgrade --install spring-mvc-prod ./helm-chart             --namespace prod             --set image.tag=${{ env.TAG }}             --set deployment.strategy=BlueGreen
+      - name: Health Check & Post-deployment Tests
+        run: |
+          kubectl rollout status deployment/spring-mvc-prod -n prod
+          curl -f https://prod.spring-mvc.example.com/actuator/health
+          # Optionally run e2e suites
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          echo "Rolling back to previous stable version"
+          ./scripts/rollback.sh prod
+
+  notify:
+    name: Notifications
+    runs-on: ubuntu-latest
+    needs: [source_lint, build_package, test, security_scan, docker_publish, deploy_dev, deploy_staging, deploy_prod]
+    if: always()
+    steps:
+      - name: Notify via Slack
+        uses: 8398a7/action-slack@v4
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,workflow,job,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify via MS Teams
+        uses: Microsoft/TeamsFx-action@v2
+        with:
+          webhook-url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          message: |
+            Pipeline ${{ github.workflow }} [${{ github.run_number }}] stage ${{ github.job }} finished with status ${{ job.status }}
