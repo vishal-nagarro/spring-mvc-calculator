@@ -1,0 +1,189 @@
+# Generated CI/CD Workflow
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  JAVA_VERSION: '17'
+  MAVEN_VERSION: '3.9.6'
+  ARTIFACT_NAME: 'application.war'
+  ARTIFACT_PATH: 'target/application.war'
+  DEPLOY_ENV: ${{ github.event.inputs.deploy_env || 'staging' }}
+
+jobs:
+  source_control:
+    name: Source Control Integration
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.get_ref.outputs.ref }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Get Commit Ref
+        id: get_ref
+        run: echo "ref=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+  ci:
+    name: Continuous Integration (CI)
+    needs: source_control
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+  test:
+    name: Testing Automation
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Maven ${{ env.MAVEN_VERSION }}
+        uses: s4u/setup-maven-action@v1
+        with:
+          maven-version: ${{ env.MAVEN_VERSION }}
+
+      - name: Run Unit, Integration and Functional Tests
+        run: mvn clean verify
+
+  build:
+    name: Build Automation
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Maven ${{ env.MAVEN_VERSION }}
+        uses: s4u/setup-maven-action@v1
+        with:
+          maven-version: ${{ env.MAVEN_VERSION }}
+
+      - name: Build WAR Artifact
+        run: mvn package -DskipTests
+
+      - name: Upload WAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ARTIFACT_PATH }}
+
+  artifact_management:
+    name: Artifact Management
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download WAR Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+
+      - name: Upload Artifact to Central Repository
+        env:
+          REPO_URL: ${{ secrets.ARTIFACTORY_REPO_URL }}
+          REPO_USER: ${{ secrets.ARTIFACTORY_USER }}
+          REPO_PASS: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: |
+          curl -u "$REPO_USER:$REPO_PASS" -T ${{ env.ARTIFACT_NAME }} "$REPO_URL/${{ env.ARTIFACT_NAME }}"
+
+  cd:
+    name: Continuous Deployment/Delivery (CD)
+    needs: artifact_management
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ env.DEPLOY_ENV }}
+      url: ${{ steps.deploy.outputs.app_url }}
+    steps:
+      - name: Download WAR Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+
+      - name: Approval Gate for Production
+        if: env.DEPLOY_ENV == 'production'
+        uses: softprops/turnstyle@v1
+        with:
+          poll-interval-seconds: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to ${{ env.DEPLOY_ENV }}
+        id: deploy
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          echo "${DEPLOY_KEY}" > deploy_key.pem
+          chmod 600 deploy_key.pem
+          scp -i deploy_key.pem -o StrictHostKeyChecking=no ${{ env.ARTIFACT_NAME }} ${DEPLOY_USER}@${DEPLOY_SERVER}:/opt/tomcat/webapps/
+          echo "app_url=https://${DEPLOY_SERVER}/" >> $GITHUB_OUTPUT
+
+  env_management:
+    name: Environment Management
+    needs: cd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Provision and Configure ${{ env.DEPLOY_ENV }} Environment
+        env:
+          ANSIBLE_HOST: ${{ secrets.DEPLOY_SERVER }}
+          ANSIBLE_USER: ${{ secrets.DEPLOY_USER }}
+          ANSIBLE_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          echo "${ANSIBLE_KEY}" > ansible_key.pem
+          chmod 600 ansible_key.pem
+          ansible-playbook -i "${ANSIBLE_HOST}," -u "${ANSIBLE_USER}" --private-key ansible_key.pem provision_environment.yml -e env=${{ env.DEPLOY_ENV }}
+
+  rollback:
+    name: Rollback Mechanisms
+    if: failure()
+    needs: cd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Rollback to Previous WAR Artifact
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          echo "${DEPLOY_KEY}" > deploy_key.pem
+          chmod 600 deploy_key.pem
+          ssh -i deploy_key.pem -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} 'bash rollback_latest.sh'
+
+  notifications_monitoring:
+    name: Notifications/Monitoring
+    needs: cd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Notification to Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          slack-message: |
+            *Workflow Status:* ${{ job.status }}
+            *Job:* Notifications/Monitoring
+            *Ref:* ${{ github.ref }}
+            *Commit:* ${{ github.sha }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Monitoring Pipeline and App Status
+        run: |
+          curl -sSf https://monitoring.example.com/api/ping || exit 1
