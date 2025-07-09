@@ -1,0 +1,38 @@
+name: Maven CI Pipeline
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Maven dependencies
+        run: mvn dependency:resolve
+
+      - name: Build with Maven
+        run: mvn package --no-transfer-progress
+
+      - name: Run unit tests with Maven
+        run: mvn test --no-transfer-progress
+
+      - name: SonarCloud Code Quality Analysis
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Deployment or Publishing Steps (if defined in other workflow files, e.g. jfrog-artifactory.yml)
+        if: ${{ always() }}
+        run: echo "Refer to deployment or publishing workflow files (e.g., jfrog-artifactory.yml) for deployment steps."
