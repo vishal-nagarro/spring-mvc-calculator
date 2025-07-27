@@ -1,0 +1,46 @@
+# Trivy Security Scan Workflow - Container Image
+name: Trivy Security Scan
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  trivy-image-scan:
+    name: Trivy Container Image Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Trivy
+        uses: aquasecurity/trivy-action@0.16.0
+        with:
+          scan-type: image
+          image-ref: vishalverma03/spring-mvc-calculator
+          format: json
+          output: trivy-image-report.json
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          security-checks: vuln
+          scanners: vuln
+        env:
+          TRIVY_TIMEOUT: 10m
+
+      - name: Upload Trivy Scan Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: trivy-image-report.json
+
+      - name: Fail on Severity CRITICAL or HIGH
+        if: always()
+        run: |
+          if jq -e '.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL" or .Severity=="HIGH")' trivy-image-report.json > /dev/null; then
+            echo 'Vulnerabilities of severity CRITICAL or HIGH found!'
+            exit 1
+          else
+            echo 'No critical/high vulnerabilities found.'
+          fi
