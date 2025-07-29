@@ -1,0 +1,39 @@
+name: Trivy Security Scan
+
+description: Perform container image vulnerability scan with Trivy on specified image(s), collects results, and uploads them as an artifact. Fails the build if high/critical vulnerabilities are found.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  trivy-container-scan:
+    runs-on: ubuntu-latest
+    name: Trivy Container Image Scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Image Scan
+        id: trivy-scan
+        uses: aquasecurity/trivy-action@0.17.0
+        with:
+          image-ref: 'vishalverma03/spring-mvc-calculator'
+          format: 'json'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          output: trivy-report.json
+          exit-code: 1
+
+      - name: Upload Trivy Scan Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report-json
+          path: trivy-report.json
+
+      - name: Annotate workflow with Trivy scan results
+        if: failure()
+        run: |
+          echo '::error file=trivy-report.json::Vulnerabilities found! Please review the scan report.'
