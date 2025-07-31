@@ -1,0 +1,31 @@
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  schedule:
+    - cron: '0 0 * * 0'
+
+permissions:
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (Java)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        language: [ 'java' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+      - name: Maven Build (with Test Skip)
+        run: mvn install --batch-mode --no-transfer-progress -Dmaven.test.skip=true
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
