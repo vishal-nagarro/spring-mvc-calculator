@@ -1,0 +1,59 @@
+# GitHub Actions CI/CD pipeline for Java Spring MVC (Maven)
+name: CI - pipeline_20250808_101636
+
+on:
+  push:
+    branches:
+      - nexops-pipeline_20250808_101636
+  pull_request:
+    branches:
+      - master
+      - nexops-pipeline_20250808_101636
+  workflow_dispatch:
+
+jobs:
+  maven-ci:
+    name: Build, Test, & Publish Artifact
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      - name: Install Dependencies (Maven)
+        run: mvn install -DskipTests
+
+      - name: Run Tests (JUnit)
+        run: mvn test
+
+      - name: SonarQube Scan
+        if: "exists('sonar-project.properties') || exists('.sonarcloud.properties')"
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: .
+
+      - name: Build Artifact (Maven Package)
+        run: mvn package --no-transfer-progress
+
+      - name: Publish Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-artifact
+          path: target/*.jar
+          if-no-files-found: error
