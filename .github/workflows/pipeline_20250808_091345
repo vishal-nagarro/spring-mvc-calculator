@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: ["*"]
+    branches: ["nexops-pipeline_20250808_091345"]
   pull_request:
-    branches: ["*"]
+    branches: ["master"]
   workflow_dispatch:
 
 jobs:
