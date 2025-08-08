@@ -1,0 +1,42 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Build and run tests
+        run: mvn clean verify
+
+      - name: Publish build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-mvc-calculator-artifacts
+          path: target/*.jar
+
+  # Optionally, enable code scanning/security workflows if templates exist.
+
+# Note:
+# - Uses Maven lifecycle: 'mvn clean verify' covers install, build, test (JUnit/TestNG).
+# - Artifacts published from 'target' directory as JAR files.
+# - Strict to best practices for Java/Maven/Spring MVC CI/CD.
